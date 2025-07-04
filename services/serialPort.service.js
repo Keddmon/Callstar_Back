@@ -28,7 +28,7 @@ const emitCIDEvent = (io, type, payload = {}) => {
  * [opcode 처리 분기]
  */
 const handleOpcode = (io, opcode, payload) => {
-    console.log(`[service][serialPort.service] OPCODE: ${opcode}, PAYLOAD: ${payload}`);
+    console.log(`[services][serialPort.service] OPCODE: ${opcode}, PAYLOAD: ${payload}`);
 
     switch (opcode) {
         case OPCODES.INCOMING:
@@ -72,7 +72,7 @@ const handleOpcode = (io, opcode, payload) => {
  */
 const setupSerialPort = (io) => {
     try {
-        serialPort = new SerialPort(serialConfig);
+        serialPort = new SerialPort({ path: serialConfig.portName, baudRate: serialConfig.baudRate, dataBits: 8, stopBits: 1, parity: 'none' });
 
         // 시리얼 포트 Open 시
         serialPort.on('open', () => {
@@ -88,6 +88,7 @@ const setupSerialPort = (io) => {
         // 시리얼 포트에 data가 넘어올 시
         serialPort.on('data', (data) => {
             buffer += data.toString();
+            console.log('[services][serialPort.service] buffer: ', buffer);
 
             // 패킷 끝까지 도달하지 않은 경우 return
             if (!buffer.includes(ETX)) return;
