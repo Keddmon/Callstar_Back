@@ -7,7 +7,8 @@ const { SerialPort } = require(`serialport`);
 const fs = require('fs');
 const { portName, baudRate } = require('../config/serial.config');
 const { setConnectionStatus } = require('../controllers/status.controller');
-const { parsePacket } = require('../utils/packetParser');
+const { parsePacket, makePacket } = require('../utils/packetParser');
+const { OPCODES } = require('../utils/protocol.constants');
 const { saveCallLog } = require('../services/callLog.service');
 
 let receivedData = '';
@@ -20,7 +21,6 @@ const setupSerialPort = (io) => {
         serialPort.on('open', () => {
             console.log('[services][serial.service]Serial port opened');
             setConnectionStatus(true);
-            sendDataToCID('테스트 송신 데이터');
         });
 
         serialPort.on('error', (err) => {
@@ -31,27 +31,12 @@ const setupSerialPort = (io) => {
             receivedData += data.toString();
             if (!receivedData.includes('\x03')) return;
 
-            const packet = parsePacket(receivedData);
+            const parsed = parsePacket(receivedData);
             receivedData = '';
+            if (!parsed) return;
 
-            if (!packet) return;
-
-            const { channel, opcode, payload } = packet;
-
-            console.log(`[services][serial.service] 채널: ${channel}, 명령: ${opcode}, 데이터: ${payload}`);
-
-            if (opcode === 'O') {
-                io.emit('cid-data', { type: 'incoming', phoneNumber: payload });
-                saveCallLog(payload);
-            } else if (opcode === 'F') {
-                io.emit('cid-data', { type: 'forced-end' });
-            } else if (opcode === 'S') {
-                io.emit('cid-data', { type: 'off-hook' });
-            } else if (opcode === 'E') {
-                io.emit('cid-data', { type: 'on-hook' });
-            } else if (opcode === 'P') {
-                io.emit('cid-data', { type: 'device-check' });
-            }
+            const { opcode, payload } = parsed;
+            handleOpcode(opcode, payload, io);
         });
 
     } catch (err) {
@@ -59,15 +44,43 @@ const setupSerialPort = (io) => {
     }
 };
 
-const sendDataToCID = (message) => {
-    if (serialPort && serialPort.isOpen) {
-        serialPort.write(message + '\r\n', (err) => {
-            if (err) console.error('[services][serial.service] 송신 실패: ', err.message);
-            else console.log('[services][serial.service] 송신 선공: ', message);
-        });
-    } else {
-        console.log('[services][serial.service] Serial 포트가 열려있지 않음');
+const handleOpcode = (opcode, payload, io) => {
+    console.log(`opcode: ${opcode}, payload: ${payload}, io: ${io}`);
+    switch (opcode) {
+        case OPCODES.INCOMING:
+            io.emit('cid-data', { type: 'incoming', phoneNumber: payload });
+            saveCallLog(payload);
+            break;
+        case OPCODES.FORCED_END:
+            io.emit('cid-data', { type: 'forced-end' });
+            break;
+        case OPCODES.OFF_HOOK:
+            io.emit('cid-data',  { type: 'off-hook' });
+            break;
+        case OPCODES.ON_HOOK:
+            io.emit('cid-data', { type: 'on-hook' });
+            break;
+        case OPCODES.DEVICE_INFO_RES:
+            io.emit('cid-data', { type: 'device-info', payload });
+            break;
+        case OPCODES.PUBLIC_PHONE:
+        case OPCODES.PRIVATE_PHONE:
+        case OPCODES.UNAVAILABLE:
+            io.emit('cid-data', { type: 'masked', reason: opcode });
+            break;
+        default:
+            console.log('[service][serialPort.service] Unknown opcode: ', opcode);
     }
-};
+}
 
-module.exports = { setupSerialPort, sendDataToCID };
+
+
+const sendCommand = (channel = '1', opcode = 'O', payload = '') => {
+    const command = makePacket(channel, opcode, payload);
+    serialPort.write(command, err => {
+        if (err) console.error('Send Fail: ', err);
+        else console.log('[service][serialPort.service] Sent: ', command);
+    });
+}
+
+module.exports = { setupSerialPort };

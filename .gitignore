@@ -1,4 +1,5 @@
 node_modules
 config
+logs
 logs/call_log.txt
 test_sender
