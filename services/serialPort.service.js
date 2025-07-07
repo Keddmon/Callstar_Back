@@ -64,7 +64,7 @@ const handleOpcode = (io, opcode, payload) => {
 
         /* ===== 발신호 처리 Protocol ===== */
         case OPCODES.DIAL_OUT:
-            emitCIDEvent(io, 'dial-out');
+            emitCIDEvent(io, 'dial-out', { phoneNumber: payload });
             break;
 
         case OPCODES.DIAL_COMPLETE:
