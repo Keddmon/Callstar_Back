@@ -1,5 +1,6 @@
 /**
- * [시리얼 포트 연결/수신]
+ * [2025. 07. 07.(월)]
+ * 시리얼 포트 연결/수신
  */
 const { SerialPort } = require(`serialport`);
 const { serialConfig } = require('../config/serial.config');
@@ -28,36 +29,61 @@ const emitCIDEvent = (io, type, payload = {}) => {
  * [opcode 처리 분기]
  */
 const handleOpcode = (io, opcode, payload) => {
-    console.log(`[services][serialPort.service] OPCODE: ${opcode}, PAYLOAD: ${payload}`);
+
+    console.log('##################################################');
+    console.log(`# [services][serialPort.service] OPCODE: ${opcode}`);
+    console.log(`# [services][serialPort.service] PAYLOAD: ${payload}`);
+    console.log('##################################################');
 
     switch (opcode) {
+
+        /* ===== 장비 ID 확인 ===== */
+        // 이 Protocol을 이용하여 '통신 포트 자동설정기능' 및 '현재 사용 중인 장비의 회선수'를 알 수 있음
+        case OPCODES.DEVICE_INFO_REQ:
+            emitCIDEvent(io, 'device-info-req');
+            break;
+
+        case OPCODES.DEVICE_INFO_RES:
+            emitCIDEvent(io, 'device-info-res', { info: payload });
+            break;
+
+
+
+        /* ===== 수신호 처리 Protocol ===== */
         case OPCODES.INCOMING:
             if (['P', 'C', 'O'].includes(payload)) {
                 emitCIDEvent(io, 'masked', { reason: payload }); // P: Private, C: Public, O: Unavailable
+                console.log(`[services][serialPort.service] Masked: ${payload}`);
             } else {
                 emitCIDEvent(io, 'incoming', { phoneNumber: payload });
                 saveCallLog(payload);
             }
             break;
 
-        case OPCODES.FORCED_END:
-            emitCIDEvent(io, 'forced-end');
-            break;
 
-        case OPCODES.OFF_HOOK:
-            emitCIDEvent(io, 'off-hook');
-            break;
 
-        case OPCODES.ON_HOOK:
-            emitCIDEvent(io, 'on-hook');
+        /* ===== 발신호 처리 Protocol ===== */
+        case OPCODES.DIAL_OUT:
+            emitCIDEvent(io, 'dial-out');
             break;
 
         case OPCODES.DIAL_COMPLETE:
             emitCIDEvent(io, 'dial-complete');
             break;
 
-        case OPCODES.DEVICE_INFO_RES:
-            emitCIDEvent(io, 'device-info', { payload });
+        case OPCODES.FORCED_END:
+            emitCIDEvent(io, 'forced-end');
+            break;
+
+
+
+        /* ===== 수화기 처리 Protocol ===== */
+        case OPCODES.OFF_HOOK:
+            emitCIDEvent(io, 'off-hook');
+            break;
+
+        case OPCODES.ON_HOOK:
+            emitCIDEvent(io, 'on-hook');
             break;
 
         default:
@@ -72,7 +98,7 @@ const handleOpcode = (io, opcode, payload) => {
  */
 const setupSerialPort = (io) => {
     try {
-        serialPort = new SerialPort({ path: serialConfig.portName, baudRate: serialConfig.baudRate, dataBits: 8, stopBits: 1, parity: 'none' });
+        serialPort = new SerialPort(serialConfig);
 
         // 시리얼 포트 Open 시
         serialPort.on('open', () => {

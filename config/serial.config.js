@@ -1,9 +1,9 @@
 /**
- * 2025-07-03
- * [시리얼 설정]
+ * [2025. 07. 03.(목)]
+ * - 시리얼 설정
  */
 const serialConfig = {
-    portName: 'COM3',
+    path: 'COM3',
     baudRate: 19200,
     dataBits: 8,
     stopBits: 1,
