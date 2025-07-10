@@ -104,6 +104,9 @@ const setupSerialPort = (io) => {
         serialPort.on('open', () => {
             console.log('[services][serial.service]Serial port opened');
             setConnectionStatus(true);
+
+            // CID 테스트: '콜스타 테스트' 프로그램 대체용
+            sendCommand('1', OPCODES.FORCED_END);
         });
 
         // 시리얼 포트 Open 시 에러가 발생했을 때

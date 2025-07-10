@@ -3,7 +3,7 @@
  * - 시리얼 설정
  */
 const serialConfig = {
-    path: 'COM3',
+    path: 'COM7',
     baudRate: 19200,
     dataBits: 8,
     stopBits: 1,
