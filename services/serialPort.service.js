@@ -40,7 +40,8 @@ const handleOpcode = (io, opcode, payload) => {
         /* ===== 장비 ID 확인 ===== */
         // 이 Protocol을 이용하여 '통신 포트 자동설정기능' 및 '현재 사용 중인 장비의 회선수'를 알 수 있음
         case OPCODES.DEVICE_INFO_REQ:
-            emitCIDEvent(io, 'device-info-req');
+            emitCIDEvent(io, 'device-info-req', { info: payload });
+            console.log(payload);
             break;
 
         case OPCODES.DEVICE_INFO_RES:
@@ -68,7 +69,7 @@ const handleOpcode = (io, opcode, payload) => {
             break;
 
         case OPCODES.DIAL_COMPLETE:
-            emitCIDEvent(io, 'dial-complete');
+            emitCIDEvent(io, 'dial-complete', { phoneNumber: payload });
             break;
 
         case OPCODES.FORCED_END:
@@ -106,7 +107,13 @@ const setupSerialPort = (io) => {
             setConnectionStatus(true);
 
             // CID 테스트: '콜스타 테스트' 프로그램 대체용
-            sendCommand('1', OPCODES.FORCED_END);
+            // sendCommand('1', OPCODES.DEVICE_INFO_RES);         // 장비 ID 확인
+
+            // sendCommand('1', OPCODES.INCOMING, '01012345678'); // 수신호 발생
+
+            sendCommand('1', OPCODES.DIAL_OUT, '0101234567'); // 발신 시도
+
+            // sendCommand('1', OPCODES.FORCED_END);              // 강제 종료
         });
 
         // 시리얼 포트 Open 시 에러가 발생했을 때
