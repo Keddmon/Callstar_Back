@@ -10,8 +10,8 @@ module.exports = {
     OPCODES: {                    // 명령어
 
         /* ===== 장비 ID 확인 ===== */
-        DEVICE_INFO_REQ: 'P',     // 장치 정보 요청   (PC → 장치)
-        DEVICE_INFO_RES: 'P',     // 장치 정보 응답   (장치 → PC)
+        // 요청 및 응답 프로토콜 명령어가 'P'로 동일하여, 구분 불가
+        DEVICE_INFO: 'P',     // 장치 정보 요청 및 응답   (PC → 장치) 및 (장치 → PC)
 
 
 

@@ -12,7 +12,87 @@ const { STX, ETX, OPCODES } = require('../utils/protocol.constants');
 
 
 let buffer = '';
-let serialPort;
+let serialPort = null;
+
+
+
+/**
+ * [시리얼 포트 설정]
+ */
+const setupSerialPort = (io, portPath = 'COM3') => {
+    try {
+        serialPort = new SerialPort({
+            path: portPath,
+            baudRate: 19200,
+            dataBits: 8,
+            stopBits: 1,
+            parity: 'none',
+        });
+
+        // 시리얼 포트 Open 시
+        serialPort.on('open', () => {
+            console.log('[services][serial.service]Serial port opened');
+            setConnectionStatus(true);
+
+            // CID 테스트: '콜스타 테스트' 프로그램 대체용
+            // sendCommand('1', OPCODES.DEVICE_INFO);         // 장비 ID 확인
+
+            // sendCommand('1', OPCODES.INCOMING, '01012345678'); // 수신호 발생
+
+            // sendCommand('1', OPCODES.DIAL_OUT, '0101234567'); // 발신 시도
+
+            // sendCommand('1', OPCODES.FORCED_END);              // 강제 종료
+        });
+
+        // 시리얼 포트 Open 시 에러가 발생했을 때
+        serialPort.on('error', (err) => {
+            console.error('[services][serial.service] Serial port error: ', err.message);
+        });
+
+        // 시리얼 포트에 data가 넘어올 시
+        serialPort.on('data', (data) => {
+            buffer += data.toString();
+            console.log('[services][serialPort.service] buffer: ', buffer);
+
+            // 패킷 끝까지 도달하지 않은 경우 return
+            if (!buffer.includes(ETX)) return;
+
+            const start = buffer.indexOf(STX);
+            const end = buffer.indexOf(ETX, start);
+
+            if (start === -1 || end === -1 || end <= start) return;
+
+            const packet = buffer.slice(start, end + 1);
+            buffer = buffer.slice(end + 1); // 다음 버퍼로 넘어감
+
+            const parsed = decodeCIDPacket(packet);
+            if (!parsed || !parsed.opcode) {
+                console.warn('[services][serialPort.service] Invalid packet: ', packet);
+                return;
+            }
+
+            const { opcode, payload } = parsed;
+            handleOpcode(io, opcode, payload);
+        });
+
+    } catch (err) {
+        console.error('[services][serial.service] Serial port setup error: ', err);
+    }
+};
+
+
+
+/**
+ * [시리얼 포트 닫기]
+ */
+const closeSerialPort = (io, portPath = 'COM3') => {
+    if (serialPort && serialPort.isOpen) {
+        serialPort.close(err => {
+            if (err) console.error('[services][serialPort.service] Error closing serial port: ', err);
+            else console.log('[services][serialPort.service] Serial port closed.');
+        });
+    }
+};
 
 
 
@@ -26,7 +106,7 @@ const emitCIDEvent = (io, type, payload = {}) => {
 
 
 /**
- * [opcode 처리 분기]
+ * [OPCODE 처리 분기]
  */
 const handleOpcode = (io, opcode, payload) => {
 
@@ -39,13 +119,14 @@ const handleOpcode = (io, opcode, payload) => {
 
         /* ===== 장비 ID 확인 ===== */
         // 이 Protocol을 이용하여 '통신 포트 자동설정기능' 및 '현재 사용 중인 장비의 회선수'를 알 수 있음
-        case OPCODES.DEVICE_INFO_REQ:
-            emitCIDEvent(io, 'device-info-req', { info: payload });
-            console.log(payload);
-            break;
-
-        case OPCODES.DEVICE_INFO_RES:
-            emitCIDEvent(io, 'device-info-res', { info: payload });
+        case 'P':
+            if (!payload || payload.trim() === '') {
+                emitCIDEvent(io, 'device-info-req', { info: payload });
+                console.log('req: emit', payload);
+            } else {
+                emitCIDEvent(io, 'device-info-res', { info: payload });
+                console.log('res: emit', payload);
+            }
             break;
 
 
@@ -95,66 +176,6 @@ const handleOpcode = (io, opcode, payload) => {
 
 
 /**
- * [시리얼 포트 설정]
- */
-const setupSerialPort = (io) => {
-    try {
-        serialPort = new SerialPort(serialConfig);
-
-        // 시리얼 포트 Open 시
-        serialPort.on('open', () => {
-            console.log('[services][serial.service]Serial port opened');
-            setConnectionStatus(true);
-
-            // CID 테스트: '콜스타 테스트' 프로그램 대체용
-            // sendCommand('1', OPCODES.DEVICE_INFO_RES);         // 장비 ID 확인
-
-            // sendCommand('1', OPCODES.INCOMING, '01012345678'); // 수신호 발생
-
-            sendCommand('1', OPCODES.DIAL_OUT, '0101234567'); // 발신 시도
-
-            // sendCommand('1', OPCODES.FORCED_END);              // 강제 종료
-        });
-
-        // 시리얼 포트 Open 시 에러가 발생했을 때
-        serialPort.on('error', (err) => {
-            console.error('[services][serial.service] Serial port error: ', err.message);
-        });
-
-        // 시리얼 포트에 data가 넘어올 시
-        serialPort.on('data', (data) => {
-            buffer += data.toString();
-            console.log('[services][serialPort.service] buffer: ', buffer);
-
-            // 패킷 끝까지 도달하지 않은 경우 return
-            if (!buffer.includes(ETX)) return;
-
-            const start = buffer.indexOf(STX);
-            const end = buffer.indexOf(ETX, start);
-
-            if (start === -1 || end === -1 || end <= start) return;
-
-            const packet = buffer.slice(start, end + 1);
-            buffer = buffer.slice(end + 1); // 다음 버퍼로 넘어감
-
-            const parsed = decodeCIDPacket(packet);
-            if (!parsed || !parsed.opcode) {
-                console.warn('[services][serialPort.service] Invalid packet: ', packet);
-                return;
-            }
-
-            const { opcode, payload } = parsed;
-            handleOpcode(io, opcode, payload);
-        });
-
-    } catch (err) {
-        console.error('[services][serial.service] Serial port setup error: ', err);
-    }
-};
-
-
-
-/**
  * [CID 기기로 패킷 전송]
  */
 const sendCommand = (channel = '1', opcode = 'O', payload = '') => {
@@ -169,7 +190,10 @@ const sendCommand = (channel = '1', opcode = 'O', payload = '') => {
     }
 };
 
+
+
 module.exports = {
     setupSerialPort,
+    closeSerialPort,
     sendCommand,
 };
