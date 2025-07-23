@@ -33,15 +33,6 @@ const setupSerialPort = (io, portPath = 'COM3') => {
         serialPort.on('open', () => {
             console.log('[services][serial.service]Serial port opened');
             setConnectionStatus(true);
-
-            // CID 테스트: '콜스타 테스트' 프로그램 대체용
-            // sendCommand('1', OPCODES.DEVICE_INFO);         // 장비 ID 확인
-
-            // sendCommand('1', OPCODES.INCOMING, '01012345678'); // 수신호 발생
-
-            // sendCommand('1', OPCODES.DIAL_OUT, '0101234567'); // 발신 시도
-
-            // sendCommand('1', OPCODES.FORCED_END);              // 강제 종료
         });
 
         // 시리얼 포트 Open 시 에러가 발생했을 때
@@ -122,10 +113,8 @@ const handleOpcode = (io, opcode, payload) => {
         case 'P':
             if (!payload || payload.trim() === '') {
                 emitCIDEvent(io, 'device-info-req', { info: payload });
-                console.log('req: emit', payload);
             } else {
                 emitCIDEvent(io, 'device-info-res', { info: payload });
-                console.log('res: emit', payload);
             }
             break;
 
@@ -196,4 +185,5 @@ module.exports = {
     setupSerialPort,
     closeSerialPort,
     sendCommand,
+    handleOpcode,
 };

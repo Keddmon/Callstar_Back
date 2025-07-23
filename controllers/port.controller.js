@@ -3,8 +3,14 @@ const { SerialPort } = require('serialport');
 const listSerialPorts = async (req, res) => {
     try {
         const ports = await SerialPort.list();
-        console.log(ports);
-        const availablePorts = ports.map(p => p.friendlyName);
+        
+        const availablePorts = ports.map(p => ({
+            label: p.friendlyName,
+            value: p.path,
+        }));
+        
+        console.log(availablePorts);
+
         res.json({ ports: availablePorts });
     } catch (err) {
         console.error('[controller][port.controller] Error listing ports: ', err);

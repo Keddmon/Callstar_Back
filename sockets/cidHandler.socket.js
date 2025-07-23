@@ -9,9 +9,45 @@ module.exports = (socket) => {
 
     socket.on('client-ready', () => {
         console.log('[SOCKET] Client is ready, sending device request');
-        const { sendCommand } = require('../services/serialPort.service');
+
+
+
+        // 테스트용 (강제 Trigger - 테스트 후 삭제 필요
+        const { sendCommand, handleOpcode } = require('../services/serialPort.service');
         const { OPCODES } = require('../utils/protocol.constants');
-        sendCommand('1', OPCODES.DEVICE_INFO);
+
+
+
+        // 장비 ID 확인
+        // sendCommand('1', OPCODES.DEVICE_INFO);
+
+
+
+        // 수신호 처리 프로토콜
+        // setTimeout(() => {
+        //     handleOpcode(socket.server, 'I', '01011111111');
+        // }, 500);
+
+
+
+        // 발신 강제종료
+        // setTimeout(() => {
+        //     handleOpcode(socket.server, 'F');
+        // }, 500);
+
+
+
+        // 수화기 들었을 경우
+        // setTimeout(() => {
+        //     handleOpcode(socket.server, 'S');
+        // }, 500);
+
+
+
+        // 수화기 내렸을 경우
+        setTimeout(() => {
+            handleOpcode(socket.server, 'E');
+        }, 500);
     });
 
     socket.on('select-port', (port) => {
