@@ -8,8 +8,6 @@ const listSerialPorts = async (req, res) => {
             label: p.friendlyName,
             value: p.path,
         }));
-        
-        console.log(availablePorts);
 
         res.json({ ports: availablePorts });
     } catch (err) {
