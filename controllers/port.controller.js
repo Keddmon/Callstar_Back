@@ -3,7 +3,7 @@ const { SerialPort } = require('serialport');
 const listSerialPorts = async (req, res) => {
     try {
         const ports = await SerialPort.list();
-        
+
         const availablePorts = ports.map(p => ({
             label: p.friendlyName,
             value: p.path,

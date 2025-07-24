@@ -19,9 +19,8 @@ const io = new Server(server, {
     },
 });
 
-// socket 연결 처리
 io.on('connection', handleSocket);
-setupSerialPort(io); // 시리얼 포트 초기화 및 이벤트 바인딩
+setupSerialPort(io);
 
 server.listen(PORT, () => {
     console.log(`[server]Server running at http://localhost: ${PORT}`);

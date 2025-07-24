@@ -1,9 +1,4 @@
-/**
- * [2025. 07. 07.(월)]
- * 시리얼 포트 연결/수신
- */
 const { SerialPort } = require(`serialport`);
-const { serialConfig } = require('../config/serial.config');
 const { setConnectionStatus } = require('../controllers/status.controller');
 const { decodeCIDPacket, encodeCIDPacket } = require('../utils/packetParser');
 const { saveCallLog } = require('../services/callLog.service');
@@ -31,13 +26,13 @@ const setupSerialPort = (io, portPath = 'COM3') => {
 
         // 시리얼 포트 Open 시
         serialPort.on('open', () => {
-            console.log('[services][serial.service]Serial port opened');
+            console.log('[services][serial.service] Serial port opened');
             setConnectionStatus(true);
         });
 
         // 시리얼 포트 Open 시 에러가 발생했을 때
         serialPort.on('error', (err) => {
-            console.error('[services][serial.service] Serial port error: ', err.message);
+            console.error('[services][serialPort.service] Serial port error: ', err.message);
         });
 
         // 시리얼 포트에 data가 넘어올 시
@@ -58,7 +53,7 @@ const setupSerialPort = (io, portPath = 'COM3') => {
 
             const parsed = decodeCIDPacket(packet);
             if (!parsed || !parsed.opcode) {
-                console.warn('[services][serialPort.service] Invalid packet: ', packet);
+                console.warn('[services][serialPort.service] 존재하지 않는 패킷: ', packet);
                 return;
             }
 
@@ -67,7 +62,7 @@ const setupSerialPort = (io, portPath = 'COM3') => {
         });
 
     } catch (err) {
-        console.error('[services][serial.service] Serial port setup error: ', err);
+        console.error('[services][serialPort.service] 시리얼 포트 설정 에러: ', err);
     }
 };
 
@@ -76,11 +71,11 @@ const setupSerialPort = (io, portPath = 'COM3') => {
 /**
  * [시리얼 포트 닫기]
  */
-const closeSerialPort = (io, portPath = 'COM3') => {
+const closeSerialPort = () => {
     if (serialPort && serialPort.isOpen) {
         serialPort.close(err => {
-            if (err) console.error('[services][serialPort.service] Error closing serial port: ', err);
-            else console.log('[services][serialPort.service] Serial port closed.');
+            if (err) console.error('[services][serialPort.service] 시리얼 포트를 닫는 중 에러 발생: ', err);
+            else console.log('[services][serialPort.service] 시리얼 포트 닫힘.');
         });
     }
 };
@@ -101,10 +96,10 @@ const emitCIDEvent = (io, type, payload = {}) => {
  */
 const handleOpcode = (io, opcode, payload) => {
 
-    console.log('##################################################');
+    console.log('#############################################################');
     console.log(`# [services][serialPort.service] OPCODE: ${opcode}`);
     console.log(`# [services][serialPort.service] PAYLOAD: ${payload}`);
-    console.log('##################################################');
+    console.log('#############################################################');
 
     switch (opcode) {
 
@@ -158,7 +153,7 @@ const handleOpcode = (io, opcode, payload) => {
             break;
 
         default:
-            console.warn('[services][serialPort.service] Unknown opcode: ', opcode);
+            console.warn('[services][serialPort.service] 알 수 없는 명렁어(opcode): ', opcode);
     }
 }
 
@@ -171,11 +166,11 @@ const sendCommand = (channel = '1', opcode = 'O', payload = '') => {
     const command = encodeCIDPacket(channel, opcode, payload);
     if (serialPort && serialPort.isOpen) {
         serialPort.write(command, err => {
-            if (err) console.error('[serialPort.service] Send fail:', err);
-            else console.log('[serialPort.service] Sent:', command);
+            if (err) console.error('[services][serialPort.service] 전송 실패:', err);
+            else console.log('[services][serialPort.service] 전송:', command);
         });
     } else {
-        console.warn('[serialPort.service] Serial port is not open');
+        console.warn('[services][serialPort.service] Serial port is not open');
     }
 };
 

@@ -1,15 +1,7 @@
-/**
- * [2025. 07. 03.(목)]
- * - 패킷 파싱 유틸
- */
-
 const { STX, ETX } = require('./protocol.constants');
 
-/**
- * 
- * @param {Buffer | string} data 
- * @returns {{channel: string, opcode: string, payload: string} | null}
- */
+
+
 const decodeCIDPacket = (data) => {
     const raw = data.toString();
 
@@ -23,13 +15,8 @@ const decodeCIDPacket = (data) => {
     return { channel, opcode, payload };
 }
 
-/**
- * 
- * @param {string} channel 
- * @param {string} opcode 
- * @param {string} payload 
- * @returns {string} CID 형식 문자열
- */
+
+
 const encodeCIDPacket = (channel = '1', opcode, payload = '') => {
     let content = `${channel}${opcode}${payload}`.padEnd(21, ' ');
     return `${STX}${content}${ETX}`;

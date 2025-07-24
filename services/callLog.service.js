@@ -1,7 +1,3 @@
-/**
- * [2025. 07. 03.(목)]
- * - 전화번호 로그 저장 분리
- */
 const fs = require('fs');
 const path = require('path');
 const logPath = path.join(__dirname, '../logs/call_log.txt');

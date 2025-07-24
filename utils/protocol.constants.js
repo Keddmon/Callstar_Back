@@ -1,8 +1,3 @@
-/**
- * [2025. 07. 07.(월)]
- * - CIT-130(1회선) 장치와 PC 간의 Protocol 정의
- */
-
 module.exports = {
     STX: '\x02',                  // 02H: 시작
     ETX: '\x03',                  // 03H: 끝
@@ -17,7 +12,7 @@ module.exports = {
 
         /* ===== 수신호 처리 Protocol: (장치 → PC) ===== */
         INCOMING: 'I',            // 수신 전화
-        
+
         MASKED_PRIVATE: 'P',      // 발신번호표시 금지  (payload='P')
         MASKED_PUBLIC: 'C',       // 공중전화           (payload='C')
         MASKED_UNAVAILABLE: 'O',  // 수집불가           (payload='O')

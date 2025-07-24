@@ -1,7 +1,3 @@
-/**
- * 2025-07-03
- * [Express 설정]
- */
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');

@@ -1,7 +1,3 @@
-/**
- * [2025. 07. 03.(목)]
- * - 연결 상태 등 HTTP 응답 처리
- */
 let isConnected = false;
 
 const getConnectionStatus = (req, res) => {
